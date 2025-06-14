@@ -8,7 +8,7 @@ on:
 jobs:
   gpt-first-analysis:
     runs-on: ubuntu-latest
-    if: github.event.client_payload.stage == 'gpt-first'
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -37,7 +37,7 @@ jobs:
 
   claude-detailed-analysis:
     runs-on: ubuntu-latest
-    if: github.event.client_payload.stage == 'claude-detailed'
+   
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -64,7 +64,7 @@ jobs:
 
   final-comparison:
     runs-on: ubuntu-latest
-    if: github.event.client_payload.stage == 'final-comparison'
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
