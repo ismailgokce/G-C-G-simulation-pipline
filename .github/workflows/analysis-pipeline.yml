@@ -1,5 +1,7 @@
 name: LATU GPT-Claude Analysis Pipeline
 on:
+  push:
+    branches: [ main ]
   repository_dispatch:
     types: [analysis-request]
 
