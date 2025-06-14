@@ -1,5 +1,11 @@
 name: LATU GPT-Claude Analysis Pipeline
+
 on:
+  push:
+    branches: [ main ]
+    paths: 
+      - 'scripts/**'
+      - '.github/workflows/**'
   repository_dispatch:
     types: [analysis-request]
 
@@ -10,16 +16,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-      
+
       - name: Install dependencies
         run: |
           pip install openai requests
-      
+
       - name: Run GPT First Analysis
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -27,11 +33,11 @@ jobs:
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
         run: |
           python scripts/gpt_analysis.py \
-            --symbol "${{ github.event.client_payload.symbol }}" \
-            --price "${{ github.event.client_payload.price }}" \
-            --change "${{ github.event.client_payload.change }}" \
-            --volume "${{ github.event.client_payload.volume }}" \
-            --webhook-url "${{ github.event.client_payload.webhook_url }}"
+            --symbol '${{ github.event.client_payload.symbol }}' \
+            --price '${{ github.event.client_payload.price }}' \
+            --change '${{ github.event.client_payload.change }}' \
+            --volume '${{ github.event.client_payload.volume }}' \
+            --webhook-url '${{ github.event.client_payload.webhook_url }}'
 
   claude-detailed-analysis:
     runs-on: ubuntu-latest
@@ -39,16 +45,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-      
+
       - name: Install dependencies
         run: |
           pip install anthropic requests
-      
+
       - name: Run Claude Detailed Analysis
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -56,9 +62,11 @@ jobs:
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
         run: |
           python scripts/claude_analysis.py \
-            --symbol "${{ github.event.client_payload.symbol }}" \
-            --gpt-result "${{ github.event.client_payload.gpt_result }}" \
-            --webhook-url "${{ github.event.client_payload.webhook_url }}"
+            --symbol '${{ github.event.client_payload.symbol }}' \
+            --price '${{ github.event.client_payload.price }}' \
+            --change '${{ github.event.client_payload.change }}' \
+            --volume '${{ github.event.client_payload.volume }}' \
+            --webhook-url '${{ github.event.client_payload.webhook_url }}'
 
   final-comparison:
     runs-on: ubuntu-latest
@@ -66,23 +74,49 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-      
+
       - name: Install dependencies
         run: |
-          pip install openai requests
-      
+          pip install requests
+
       - name: Run Final Comparison
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
         run: |
           python scripts/final_comparison.py \
-            --symbol "${{ github.event.client_payload.symbol }}" \
-            --gpt-result "${{ github.event.client_payload.gpt_result }}" \
-            --claude-result "${{ github.event.client_payload.claude_result }}" \
-            --webhook-url "${{ github.event.client_payload.webhook_url }}"
+            --symbol '${{ github.event.client_payload.symbol }}' \
+            --webhook-url '${{ github.event.client_payload.webhook_url }}'
+
+  auto-analysis:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          pip install openai anthropic requests pandas numpy
+
+      - name: Run Auto Analysis Pipeline
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🚀 Starting Auto Analysis Pipeline..."
+          python scripts/gpt_analysis.py --auto-mode
+          python scripts/claude_analysis.py --auto-mode
+          python scripts/final_comparison.py --auto-mode
+          echo "✅ Auto Analysis Pipeline Completed!"
